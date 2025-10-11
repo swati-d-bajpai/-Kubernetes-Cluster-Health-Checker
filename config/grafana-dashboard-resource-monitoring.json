@@ -1,0 +1,313 @@
+{
+  "dashboard": {
+    "title": "Kubernetes Resource Monitoring - CPU & Memory",
+    "tags": ["kubernetes", "resources", "cpu", "memory"],
+    "timezone": "browser",
+    "schemaVersion": 16,
+    "version": 1,
+    "refresh": "30s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Node CPU Usage",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+        "targets": [
+          {
+            "expr": "100 - (avg by (instance) (irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+            "legendFormat": "{{instance}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "percent", "min": 0, "max": 100},
+          {"format": "short"}
+        ],
+        "alert": {
+          "conditions": [
+            {
+              "evaluator": {"params": [80], "type": "gt"},
+              "operator": {"type": "and"},
+              "query": {"params": ["A", "5m", "now"]},
+              "reducer": {"params": [], "type": "avg"},
+              "type": "query"
+            }
+          ],
+          "name": "Node CPU High"
+        }
+      },
+      {
+        "id": 2,
+        "title": "Node Memory Usage",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+        "targets": [
+          {
+            "expr": "(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100",
+            "legendFormat": "{{instance}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "percent", "min": 0, "max": 100},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Pod CPU Usage by Namespace",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+        "targets": [
+          {
+            "expr": "sum(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m])) by (namespace)",
+            "legendFormat": "{{namespace}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "CPU Cores"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Pod Memory Usage by Namespace",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+        "targets": [
+          {
+            "expr": "sum(container_memory_usage_bytes{container!=\"\",container!=\"POD\"}) by (namespace)",
+            "legendFormat": "{{namespace}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "bytes", "label": "Memory"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Top 10 Pods by CPU Usage",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+        "targets": [
+          {
+            "expr": "topk(10, sum(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m])) by (pod, namespace))",
+            "legendFormat": "{{namespace}}/{{pod}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "CPU Cores"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Top 10 Pods by Memory Usage",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
+        "targets": [
+          {
+            "expr": "topk(10, sum(container_memory_usage_bytes{container!=\"\",container!=\"POD\"}) by (pod, namespace))",
+            "legendFormat": "{{namespace}}/{{pod}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "bytes", "label": "Memory"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Container CPU Usage by Pod",
+        "type": "table",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24},
+        "targets": [
+          {
+            "expr": "sum(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m])) by (namespace, pod, container)",
+            "format": "table",
+            "instant": true
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {"Time": true},
+              "indexByName": {},
+              "renameByName": {
+                "namespace": "Namespace",
+                "pod": "Pod",
+                "container": "Container",
+                "Value": "CPU (cores)"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Container Memory Usage by Pod",
+        "type": "table",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24},
+        "targets": [
+          {
+            "expr": "sum(container_memory_usage_bytes{container!=\"\",container!=\"POD\"}) by (namespace, pod, container)",
+            "format": "table",
+            "instant": true
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {"Time": true},
+              "indexByName": {},
+              "renameByName": {
+                "namespace": "Namespace",
+                "pod": "Pod",
+                "container": "Container",
+                "Value": "Memory (bytes)"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Deployment CPU Usage",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 32},
+        "targets": [
+          {
+            "expr": "sum(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m])) by (namespace, pod) * on(namespace, pod) group_left(owner_name) kube_pod_owner{owner_kind=\"ReplicaSet\"}",
+            "legendFormat": "{{namespace}}/{{owner_name}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "CPU Cores"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Deployment Memory Usage",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 32},
+        "targets": [
+          {
+            "expr": "sum(container_memory_usage_bytes{container!=\"\",container!=\"POD\"}) by (namespace, pod) * on(namespace, pod) group_left(owner_name) kube_pod_owner{owner_kind=\"ReplicaSet\"}",
+            "legendFormat": "{{namespace}}/{{owner_name}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "bytes", "label": "Memory"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 11,
+        "title": "StatefulSet CPU Usage",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 40},
+        "targets": [
+          {
+            "expr": "sum(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m])) by (namespace, pod) * on(namespace, pod) group_left(owner_name) kube_pod_owner{owner_kind=\"StatefulSet\"}",
+            "legendFormat": "{{namespace}}/{{owner_name}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "CPU Cores"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 12,
+        "title": "StatefulSet Memory Usage",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 40},
+        "targets": [
+          {
+            "expr": "sum(container_memory_usage_bytes{container!=\"\",container!=\"POD\"}) by (namespace, pod) * on(namespace, pod) group_left(owner_name) kube_pod_owner{owner_kind=\"StatefulSet\"}",
+            "legendFormat": "{{namespace}}/{{owner_name}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "bytes", "label": "Memory"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 13,
+        "title": "DaemonSet CPU Usage",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 48},
+        "targets": [
+          {
+            "expr": "sum(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m])) by (namespace, pod) * on(namespace, pod) group_left(owner_name) kube_pod_owner{owner_kind=\"DaemonSet\"}",
+            "legendFormat": "{{namespace}}/{{owner_name}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "CPU Cores"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 14,
+        "title": "DaemonSet Memory Usage",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 48},
+        "targets": [
+          {
+            "expr": "sum(container_memory_usage_bytes{container!=\"\",container!=\"POD\"}) by (namespace, pod) * on(namespace, pod) group_left(owner_name) kube_pod_owner{owner_kind=\"DaemonSet\"}",
+            "legendFormat": "{{namespace}}/{{owner_name}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "bytes", "label": "Memory"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 15,
+        "title": "CPU Requests vs Usage by Namespace",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 56},
+        "targets": [
+          {
+            "expr": "sum(kube_pod_container_resource_requests{resource=\"cpu\"}) by (namespace)",
+            "legendFormat": "Requests - {{namespace}}"
+          },
+          {
+            "expr": "sum(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m])) by (namespace)",
+            "legendFormat": "Usage - {{namespace}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "CPU Cores"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 16,
+        "title": "Memory Requests vs Usage by Namespace",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 56},
+        "targets": [
+          {
+            "expr": "sum(kube_pod_container_resource_requests{resource=\"memory\"}) by (namespace)",
+            "legendFormat": "Requests - {{namespace}}"
+          },
+          {
+            "expr": "sum(container_memory_usage_bytes{container!=\"\",container!=\"POD\"}) by (namespace)",
+            "legendFormat": "Usage - {{namespace}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "bytes", "label": "Memory"},
+          {"format": "short"}
+        ]
+      }
+    ]
+  }
+}
+

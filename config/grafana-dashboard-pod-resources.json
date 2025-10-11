@@ -1,0 +1,237 @@
+{
+  "dashboard": {
+    "title": "Pod Resource Details - CPU & Memory",
+    "tags": ["kubernetes", "pods", "cpu", "memory", "resources"],
+    "timezone": "browser",
+    "schemaVersion": 16,
+    "version": 1,
+    "refresh": "30s",
+    "templating": {
+      "list": [
+        {
+          "name": "namespace",
+          "type": "query",
+          "query": "label_values(kube_pod_info, namespace)",
+          "current": {"text": "All", "value": "$__all"},
+          "includeAll": true,
+          "multi": false,
+          "refresh": 1
+        },
+        {
+          "name": "pod",
+          "type": "query",
+          "query": "label_values(kube_pod_info{namespace=\"$namespace\"}, pod)",
+          "current": {"text": "All", "value": "$__all"},
+          "includeAll": true,
+          "multi": false,
+          "refresh": 1
+        }
+      ]
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Pod CPU Usage - $pod",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+        "targets": [
+          {
+            "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"$namespace\",pod=~\"$pod\",container!=\"\",container!=\"POD\"}[5m])) by (pod, container)",
+            "legendFormat": "{{pod}}/{{container}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "CPU Cores"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Pod Memory Usage - $pod",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+        "targets": [
+          {
+            "expr": "sum(container_memory_usage_bytes{namespace=\"$namespace\",pod=~\"$pod\",container!=\"\",container!=\"POD\"}) by (pod, container)",
+            "legendFormat": "{{pod}}/{{container}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "bytes", "label": "Memory"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Pod CPU Throttling",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+        "targets": [
+          {
+            "expr": "sum(rate(container_cpu_cfs_throttled_seconds_total{namespace=\"$namespace\",pod=~\"$pod\",container!=\"\",container!=\"POD\"}[5m])) by (pod, container)",
+            "legendFormat": "{{pod}}/{{container}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "Throttled Seconds"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Pod Memory Working Set",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+        "targets": [
+          {
+            "expr": "sum(container_memory_working_set_bytes{namespace=\"$namespace\",pod=~\"$pod\",container!=\"\",container!=\"POD\"}) by (pod, container)",
+            "legendFormat": "{{pod}}/{{container}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "bytes", "label": "Memory"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 5,
+        "title": "All Pods CPU Usage in Namespace",
+        "type": "table",
+        "gridPos": {"h": 10, "w": 24, "x": 0, "y": 16},
+        "targets": [
+          {
+            "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"$namespace\",container!=\"\",container!=\"POD\"}[5m])) by (namespace, pod, container)",
+            "format": "table",
+            "instant": true
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {"Time": true},
+              "indexByName": {},
+              "renameByName": {
+                "namespace": "Namespace",
+                "pod": "Pod",
+                "container": "Container",
+                "Value": "CPU Usage (cores)"
+              }
+            }
+          },
+          {
+            "id": "sortBy",
+            "options": {
+              "fields": {},
+              "sort": [{"field": "CPU Usage (cores)", "desc": true}]
+            }
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "All Pods Memory Usage in Namespace",
+        "type": "table",
+        "gridPos": {"h": 10, "w": 24, "x": 0, "y": 26},
+        "targets": [
+          {
+            "expr": "sum(container_memory_usage_bytes{namespace=\"$namespace\",container!=\"\",container!=\"POD\"}) by (namespace, pod, container)",
+            "format": "table",
+            "instant": true
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {"Time": true},
+              "indexByName": {},
+              "renameByName": {
+                "namespace": "Namespace",
+                "pod": "Pod",
+                "container": "Container",
+                "Value": "Memory Usage (bytes)"
+              }
+            }
+          },
+          {
+            "id": "sortBy",
+            "options": {
+              "fields": {},
+              "sort": [{"field": "Memory Usage (bytes)", "desc": true}]
+            }
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Pod Resource Limits vs Usage",
+        "type": "table",
+        "gridPos": {"h": 10, "w": 24, "x": 0, "y": 36},
+        "targets": [
+          {
+            "expr": "sum(kube_pod_container_resource_limits{namespace=\"$namespace\",pod=~\"$pod\",resource=\"cpu\"}) by (namespace, pod, container)",
+            "format": "table",
+            "instant": true,
+            "legendFormat": "CPU Limit"
+          },
+          {
+            "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"$namespace\",pod=~\"$pod\",container!=\"\",container!=\"POD\"}[5m])) by (namespace, pod, container)",
+            "format": "table",
+            "instant": true,
+            "legendFormat": "CPU Usage"
+          },
+          {
+            "expr": "sum(kube_pod_container_resource_limits{namespace=\"$namespace\",pod=~\"$pod\",resource=\"memory\"}) by (namespace, pod, container)",
+            "format": "table",
+            "instant": true,
+            "legendFormat": "Memory Limit"
+          },
+          {
+            "expr": "sum(container_memory_usage_bytes{namespace=\"$namespace\",pod=~\"$pod\",container!=\"\",container!=\"POD\"}) by (namespace, pod, container)",
+            "format": "table",
+            "instant": true,
+            "legendFormat": "Memory Usage"
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Network I/O by Pod",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 46},
+        "targets": [
+          {
+            "expr": "sum(rate(container_network_receive_bytes_total{namespace=\"$namespace\",pod=~\"$pod\"}[5m])) by (pod)",
+            "legendFormat": "Receive - {{pod}}"
+          },
+          {
+            "expr": "sum(rate(container_network_transmit_bytes_total{namespace=\"$namespace\",pod=~\"$pod\"}[5m])) by (pod)",
+            "legendFormat": "Transmit - {{pod}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "Bps", "label": "Bytes/sec"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Filesystem Usage by Pod",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 46},
+        "targets": [
+          {
+            "expr": "sum(container_fs_usage_bytes{namespace=\"$namespace\",pod=~\"$pod\",container!=\"\",container!=\"POD\"}) by (pod, container)",
+            "legendFormat": "{{pod}}/{{container}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "bytes", "label": "Filesystem Usage"},
+          {"format": "short"}
+        ]
+      }
+    ]
+  }
+}
+
