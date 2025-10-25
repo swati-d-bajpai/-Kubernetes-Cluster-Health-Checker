@@ -16,7 +16,7 @@ NC='\033[0m' # No Color
 print_header() {
     echo -e "${BLUE}╔══════════════════════════════════════════════════════════════════════════╗${NC}"
     echo -e "${BLUE}║                                                                          ║${NC}"
-    echo -e "${BLUE}║              STARTING PORT FORWARDS FOR KUBERNETES SERVICES             ║${NC}"
+    echo -e "${BLUE}║              STARTING PORT FORWARDS FOR KUBERNETES SERVICES              ║${NC}"
     echo -e "${BLUE}║                                                                          ║${NC}"
     echo -e "${BLUE}╚══════════════════════════════════════════════════════════════════════════╝${NC}"
     echo ""

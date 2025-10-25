@@ -111,6 +111,7 @@ python3 scripts/check-health.py
 
 # Access Prometheus
 kubectl port-forward -n monitoring svc/prometheus-kube-prometheus-prometheus 9090:9090
+kubectl port-forward -n monitoring svc/prometheus-kube-prometheus-prometheus 3000:3000
 # Output: Prometheus UI at http://localhost:9090
 ```
 
