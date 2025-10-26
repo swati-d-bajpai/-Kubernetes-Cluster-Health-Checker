@@ -1,0 +1,148 @@
+# AlertManager configuration for Docker Compose setup
+
+global:
+  resolve_timeout: 5m
+  smtp_smarthost: 'smtp.gmail.com:587'
+  smtp_from: 'alerts@example.com'
+  smtp_auth_username: 'alerts@example.com'
+  smtp_auth_password: 'your-password-here'
+
+# Templates for notifications
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# Route configuration
+route:
+  # Default receiver
+  receiver: 'default'
+  
+  # Group alerts by these labels
+  group_by: ['alertname', 'cluster', 'service']
+  
+  # Wait time before sending first notification
+  group_wait: 30s
+  
+  # Wait time before sending notification about new alerts in group
+  group_interval: 5m
+  
+  # Wait time before re-sending notification
+  repeat_interval: 4h
+  
+  # Child routes
+  routes:
+    # Critical alerts - send immediately
+    - match:
+        severity: critical
+      receiver: 'critical-alerts'
+      group_wait: 10s
+      repeat_interval: 1h
+    
+    # Warning alerts - send with delay
+    - match:
+        severity: warning
+      receiver: 'warning-alerts'
+      group_wait: 30s
+      repeat_interval: 4h
+    
+    # Info alerts - send daily digest
+    - match:
+        severity: info
+      receiver: 'info-alerts'
+      group_wait: 5m
+      repeat_interval: 24h
+
+# Inhibition rules - suppress dependent alerts
+inhibit_rules:
+  # If node is down, don't alert about pods on that node
+  - source_match:
+      alertname: 'NodeDown'
+    target_match:
+      alertname: 'PodDown'
+    equal: ['node']
+  
+  # If cluster is down, don't alert about services
+  - source_match:
+      alertname: 'ClusterDown'
+    target_match_re:
+      alertname: '.*'
+    equal: ['cluster']
+
+# Receivers - notification destinations
+receivers:
+  # Default receiver - logs only
+  - name: 'default'
+    webhook_configs:
+      - url: 'http://localhost:5001/webhook'
+        send_resolved: true
+
+  # Critical alerts - multiple channels
+  - name: 'critical-alerts'
+    # Email notifications
+    email_configs:
+      - to: 'ops-team@example.com'
+        headers:
+          Subject: '🚨 CRITICAL: {{ .GroupLabels.alertname }}'
+        html: |
+          <h2>Critical Alert</h2>
+          <p><strong>Alert:</strong> {{ .GroupLabels.alertname }}</p>
+          <p><strong>Severity:</strong> {{ .GroupLabels.severity }}</p>
+          <p><strong>Summary:</strong> {{ .CommonAnnotations.summary }}</p>
+          <p><strong>Description:</strong> {{ .CommonAnnotations.description }}</p>
+        send_resolved: true
+    
+    # Slack notifications (configure webhook URL)
+    # slack_configs:
+    #   - api_url: 'https://hooks.slack.com/services/YOUR/WEBHOOK/URL'
+    #     channel: '#critical-alerts'
+    #     title: '🚨 {{ .GroupLabels.alertname }}'
+    #     text: |
+    #       *Alert:* {{ .GroupLabels.alertname }}
+    #       *Severity:* {{ .GroupLabels.severity }}
+    #       *Summary:* {{ .CommonAnnotations.summary }}
+    #       *Description:* {{ .CommonAnnotations.description }}
+    #     color: 'danger'
+    #     send_resolved: true
+    
+    # PagerDuty notifications (configure service key)
+    # pagerduty_configs:
+    #   - service_key: 'your-pagerduty-service-key'
+    #     description: '{{ .GroupLabels.alertname }}: {{ .CommonAnnotations.summary }}'
+
+  # Warning alerts - email and Slack
+  - name: 'warning-alerts'
+    email_configs:
+      - to: 'ops-team@example.com'
+        headers:
+          Subject: '⚠️  WARNING: {{ .GroupLabels.alertname }}'
+        html: |
+          <h2>Warning Alert</h2>
+          <p><strong>Alert:</strong> {{ .GroupLabels.alertname }}</p>
+          <p><strong>Severity:</strong> {{ .GroupLabels.severity }}</p>
+          <p><strong>Summary:</strong> {{ .CommonAnnotations.summary }}</p>
+          <p><strong>Description:</strong> {{ .CommonAnnotations.description }}</p>
+        send_resolved: true
+    
+    # Slack notifications
+    # slack_configs:
+    #   - api_url: 'https://hooks.slack.com/services/YOUR/WEBHOOK/URL'
+    #     channel: '#alerts'
+    #     title: '⚠️  {{ .GroupLabels.alertname }}'
+    #     text: |
+    #       *Alert:* {{ .GroupLabels.alertname }}
+    #       *Severity:* {{ .GroupLabels.severity }}
+    #       *Summary:* {{ .CommonAnnotations.summary }}
+    #     color: 'warning'
+    #     send_resolved: true
+
+  # Info alerts - email digest
+  - name: 'info-alerts'
+    email_configs:
+      - to: 'ops-team@example.com'
+        headers:
+          Subject: 'ℹ️  INFO: {{ .GroupLabels.alertname }}'
+        html: |
+          <h2>Info Alert</h2>
+          <p><strong>Alert:</strong> {{ .GroupLabels.alertname }}</p>
+          <p><strong>Summary:</strong> {{ .CommonAnnotations.summary }}</p>
+        send_resolved: true
+

@@ -155,6 +155,19 @@ import_grafana_dashboards() {
 
     print_success "Namespace Resources dashboard imported"
 
+    # Dashboard 5: Alerts Overview
+    kubectl create configmap grafana-dashboard-alerts-overview \
+        --from-file=../config/grafana-dashboard-alerts-overview.json \
+        -n monitoring \
+        --dry-run=client -o yaml | kubectl apply -f -
+
+    kubectl label configmap grafana-dashboard-alerts-overview \
+        grafana_dashboard=1 \
+        -n monitoring \
+        --overwrite
+
+    print_success "Prometheus Alerts Overview dashboard imported"
+
     echo ""
 
     print_info "Available custom dashboards:"
@@ -162,6 +175,7 @@ import_grafana_dashboards() {
     echo "  • Kubernetes Resource Monitoring - CPU & Memory"
     echo "  • Pod Resource Details - CPU & Memory"
     echo "  • Namespace Resource Monitoring"
+    echo "  • Prometheus Alerts Overview ⭐ NEW"
     echo ""
 
     print_info "Pre-installed dashboards:"

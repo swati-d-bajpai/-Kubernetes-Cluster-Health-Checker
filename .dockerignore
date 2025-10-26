@@ -1,0 +1,249 @@
+# .dockerignore - Files and directories to exclude from Docker build context
+# This reduces build time and image size
+
+# Git files
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+docs/
+README.md
+GETTING_STARTED.md
+SPRINT_1_GUIDE.md
+EXAMPLES.md
+TESTING_GUIDE.md
+TROUBLESHOOTING.md
+QUICK_REFERENCE.md
+ACCESS_SERVICES.md
+MONITORING_GUIDE.md
+MONITORING_QUICK_REFERENCE.md
+ALERTMANAGER_GUIDE.md
+TOOLS_EXPLAINED.md
+
+# Python cache and compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.manifest
+*.spec
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+.project
+.pydevproject
+.settings/
+
+# Testing
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+pytest_cache/
+*.cover
+.cache
+nosetests.xml
+coverage.xml
+*.log
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# Environment files
+.env
+.env.local
+.env.*.local
+*.env
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+*.swp
+*.swo
+
+# Docker files (don't include in build context)
+Dockerfile
+docker-compose.yml
+docker-compose.*.yml
+.dockerignore
+
+# Kubernetes files (not needed in container)
+*.yaml
+*.yml
+!requirements.txt
+
+# Minikube and kubectl cache
+.minikube/
+.kube/
+
+# Node modules (if any)
+node_modules/
+npm-debug.log
+
+# Build artifacts
+*.o
+*.a
+*.exe
+*.dll
+*.dylib
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Backup files
+*.backup
+*.old
+
+# Archive files
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+
+# Large files
+*.iso
+*.dmg
+*.pkg
+
+# CI/CD files
+.github/
+.gitlab-ci.yml
+.travis.yml
+Jenkinsfile
+azure-pipelines.yml
+
+# Helm charts (if any)
+charts/
+*.tgz
+
+# Terraform files (if any)
+*.tfstate
+*.tfstate.backup
+.terraform/
+
+# Scripts that are not needed in container
+scripts/setup-minikube.sh
+scripts/verify-setup.sh
+scripts/start-port-forwards.sh
+scripts/stop-port-forwards.sh
+scripts/configure-monitoring.sh
+
+# Keep only essential scripts
+!scripts/check-health.py
+!scripts/test-alerts.py
+!scripts/show-resource-usage.py
+
+# Config files to exclude (keep only essential ones)
+config/grafana-*.json
+config/prometheus.yml
+config/alertmanager.yml
+
+# Keep only essential config
+!config/prometheus-alerts.yaml
+
+# Test files
+tests/
+test_*.py
+*_test.py
+
+# Coverage reports
+.coverage
+htmlcov/
+
+# MyPy cache
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+
+# Local development files
+local/
+.local/
+
+# Secrets and credentials
+secrets/
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+credentials.json
+service-account.json
+
+# Data directories
+data/
+*.csv
+*.json
+*.xml
+
+# Exclude everything in root except specific files
+/*
+!src/
+!scripts/
+!config/
+!requirements.txt
+!Dockerfile
+
